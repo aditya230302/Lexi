@@ -1,0 +1,11 @@
+streamlit
+opencv-python-headless
+easyocr==1.7.0
+textblob==0.17.1
+googletrans==3.1.0a0
+gtts==2.3.2
+playsound==1.2.2
+pyaudio
+PyPDF2==3.0.1
+speechrecognition
+Pillow

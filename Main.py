@@ -171,19 +171,61 @@ dic = {
     'Welsh': 'cy', 'Xhosa': 'xh', 'Yiddish': 'yi', 'Yoruba': 'yo', 'Zulu': 'zu'
 }
 
+import pyaudio
+import wave
+import tempfile
+import os
+
+
 def take_command():
+    CHUNK = 1024
+    FORMAT = pyaudio.paInt16
+    CHANNELS = 1
+    RATE = 44100
+    RECORD_SECONDS = 5
+    WAVE_OUTPUT_FILENAME = "temp.wav"
+
+    p = pyaudio.PyAudio()
+
+    stream = p.open(format=FORMAT,
+                    channels=CHANNELS,
+                    rate=RATE,
+                    input=True,
+                    frames_per_buffer=CHUNK)
+
+    st.write("Listening...")
+
+    frames = []
+
+    for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
+        data = stream.read(CHUNK)
+        frames.append(data)
+
+    st.write("Recording finished...")
+
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+
+    with wave.open(WAVE_OUTPUT_FILENAME, 'wb') as wf:
+        wf.setnchannels(CHANNELS)
+        wf.setsampwidth(p.get_sample_size(FORMAT))
+        wf.setframerate(RATE)
+        wf.writeframes(b''.join(frames))
+
     r = sr.Recognizer()
-    with sr.Microphone() as source:
-        st.write("Listening...")
-        r.pause_threshold = 1
-        audio = r.listen(source)
+    with sr.AudioFile(WAVE_OUTPUT_FILENAME) as source:
+        audio_data = r.record(source)
+
+    os.remove(WAVE_OUTPUT_FILENAME)  # Remove temporary file
+
     try:
-        st.write("Recognizing...")
-        query = r.recognize_google(audio, language='en-in')
+        query = r.recognize_google(audio_data, language='en-in')
         return query
     except Exception as e:
         st.write("Could not understand, please try again.")
         return None
+
 
 def translate_text(text, target_lang):
     if isinstance(text, str):  # If input is a single string
