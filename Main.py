@@ -2,6 +2,7 @@ import cv2
 import easyocr
 import numpy as np
 import streamlit as st
+from streamlit_webrtc import webrtc_streamer
 from textblob import TextBlob
 from googletrans import Translator, LANGUAGES
 from gtts import gTTS
@@ -263,14 +264,11 @@ def translate_pdf(pdf_reader, target_language):
             translated_pages.append("No text found on this page.")
 
     return translated_pages
-def perform_ocr_on_image(image_bytes, target_lang):
-    # Convert bytes to image
-    img = Image.open(io.BytesIO(image_bytes))
+def perform_ocr_on_image(image_frame, target_lang):
+    # Convert frame to OpenCV format
+    frame = cv2.cvtColor(np.array(image_frame.to_image()), cv2.COLOR_RGB2BGR)
 
-    # Convert image to numpy array
-    img_np = np.array(img)
-
-    result = reader.readtext(img_np)
+    result = reader.readtext(frame)
     ocr_result = ""
     for detection in result:
         text = detection[1]
@@ -288,6 +286,7 @@ def perform_ocr_on_image(image_bytes, target_lang):
 
         ocr_result += translated_text + "\n"
     return ocr_result
+
 
 
 def perform_ocr_on_frame(frame, target_lang):
@@ -313,29 +312,29 @@ def perform_ocr_on_frame(frame, target_lang):
 
     return frame
 
-
 def capture_and_process(target_lang='en'):
     st.title("Live OCR Translation")
 
-    cap = cv2.VideoCapture(0)  # Open the default camera (0)
+    webrtc_ctx = webrtc_streamer(key="example")
+    if webrtc_ctx.video_transformer:
+        video_frames = webrtc_ctx.video_transformer.frames_queue
+    else:
+        video_frames = None
 
     while True:
-        ret, frame = cap.read()  # Capture frame from the camera
-        if not ret:
-            break
+        if video_frames is not None and not video_frames.empty():
+            frame = video_frames.get(timeout=1)
+            if frame is None:
+                break
 
-        # Process the detected text
-        processed_frame = perform_ocr_on_frame(frame, target_lang)
+            # Convert frame to OpenCV format
+            frame = cv2.cvtColor(np.array(frame.to_image()), cv2.COLOR_RGB2BGR)
 
-        # Display the processed frame using Streamlit
-        st.image(processed_frame, channels="BGR", use_column_width=True)
+            # Process the detected text
+            processed_frame = perform_ocr_on_frame(frame, target_lang)
 
-        # Check for key press (press 'q' to quit)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    cap.release()
-
+            # Display the processed frame using Streamlit
+            st.image(processed_frame, channels="BGR", use_column_width=True)
 
 # Streamlit App
 st.title("Language Nexus - LEXI")
