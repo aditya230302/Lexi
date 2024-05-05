@@ -12,14 +12,178 @@ from PyPDF2 import PdfReader
 import speech_recognition as sr
 from PIL import Image
 import io
-from document_translation import translate_pdf
-from languages import languages
-from live_translation import dic, take_command
 
 # Initialize EasyOCR reader and Google Translator
 reader = easyocr.Reader(['en'])  # Set the languages for OCR
 translator = Translator()
 
+languages = [
+    "Afrikaans",
+    "Akan",
+    "Albanian",
+    "Amharic",
+    "Arabic",
+    "Armenian",
+    "Assamese",
+    "Aymara",
+    "Azerbaijani",
+    "Bambara",
+    "Bangla",
+    "Basque",
+    "Belarusian",
+    "Bhojpuri",
+    "Bosnian",
+    "Bulgarian",
+    "Burmese",
+    "Catalan",
+    "Cebuano",
+    "Central Kurdish",
+    "Chinese (Simplified)",
+    "Chinese (Traditional)",
+    "Corsican",
+    "Croatian",
+    "Czech",
+    "Danish",
+    "Divehi",
+    "Dogri",
+    "Dutch",
+    "English",
+    "Esperanto",
+    "Estonian",
+    "Ewe",
+    "Filipino",
+    "Finnish",
+    "French",
+    "Galician",
+    "Ganda",
+    "Georgian",
+    "German",
+    "Goan Konkani",
+    "Greek",
+    "Guarani",
+    "Gujarati",
+    "Haitian Creole",
+    "Hausa",
+    "Hawaiian",
+    "Hebrew",
+    "Hindi",
+    "Hmong",
+    "Hungarian",
+    "Icelandic",
+    "Igbo",
+    "Iloko",
+    "Indonesian",
+    "Irish",
+    "Italian",
+    "Japanese",
+    "Javanese",
+    "Kannada",
+    "Kazakh",
+    "Khmer",
+    "Kinyarwanda",
+    "Korean",
+    "Krio",
+    "Kurdish",
+    "Kyrgyz",
+    "Lao",
+    "Latin",
+    "Latvian",
+    "Lingala",
+    "Lithuanian",
+    "Luxembourgish",
+    "Macedonian",
+    "Maithili",
+    "Malagasy",
+    "Malay",
+    "Malayalam",
+    "Maltese",
+    "Manipuri (Meitei Mayek)",
+    "Māori",
+    "Marathi",
+    "Mizo",
+    "Mongolian",
+    "Nepali",
+    "Northern Sotho",
+    "Norwegian",
+    "Nyanja",
+    "Odia",
+    "Oromo",
+    "Pashto",
+    "Persian",
+    "Polish",
+    "Portuguese",
+    "Punjabi",
+    "Quechua",
+    "Romanian",
+    "Russian",
+    "Samoan",
+    "Sanskrit",
+    "Scottish Gaelic",
+    "Serbian",
+    "Shona",
+    "Sindhi",
+    "Sinhala",
+    "Slovak",
+    "Slovenian",
+    "Somali",
+    "Southern Sotho",
+    "Spanish",
+    "Sundanese",
+    "Swahili",
+    "Swedish",
+    "Tajik",
+    "Tamil",
+    "Tatar",
+    "Telugu",
+    "Thai",
+    "Tigrinya",
+    "Tsonga",
+    "Turkish",
+    "Turkmen",
+    "Ukrainian",
+    "Urdu",
+    "Uyghur",
+    "Uzbek",
+    "Vietnamese",
+    "Welsh",
+    "Western Frisian",
+    "Xhosa",
+    "Yiddish",
+    "Yoruba",
+    "Zulu"
+]
+
+dic = {
+    'Afrikaans': 'af', 'Albanian': 'sq', 'Amharic': 'am', 'Arabic': 'ar', 'Armenian': 'hy', 'Azerbaijani': 'az', 'Basque': 'eu',
+    'Belarusian': 'be', 'Bengali': 'bn', 'Bosnian': 'bs', 'Bulgarian': 'bg', 'Catalan': 'ca', 'Cebuano': 'ceb', 'Chichewa': 'ny',
+    'Chinese (Simplified)': 'zh-cn', 'Chinese (Traditional)': 'zh-tw', 'Corsican': 'co', 'Croatian': 'hr', 'Czech': 'cs', 'Danish': 'da',
+    'Dutch': 'nl', 'English': 'en', 'Esperanto': 'eo', 'Estonian': 'et', 'Filipino': 'tl', 'Finnish': 'fi', 'French': 'fr',
+    'Frisian': 'fy', 'Galician': 'gl', 'Georgian': 'ka', 'German': 'de', 'Greek': 'el', 'Gujarati': 'gu', 'Haitian Creole': 'ht',
+    'Hausa': 'ha', 'Hawaiian': 'haw', 'Hebrew': 'he', 'Hindi': 'hi', 'Hmong': 'hmn', 'Hungarian': 'hu', 'Icelandic': 'is', 'Igbo': 'ig',
+    'Indonesian': 'id', 'Irish': 'ga', 'Italian': 'it', 'Japanese': 'ja', 'Javanese': 'jw', 'Kannada': 'kn', 'Kazakh': 'kk', 'Khmer': 'km',
+    'Korean': 'ko', 'Kurdish (Kurmanji)': 'ku', 'Kyrgyz': 'ky', 'Lao': 'lo', 'Latin': 'la', 'Latvian': 'lv', 'Lithuanian': 'lt',
+    'Luxembourgish': 'lb', 'Macedonian': 'mk', 'Malagasy': 'mg', 'Malay': 'ms', 'Malayalam': 'ml', 'Maltese': 'mt', 'Maori': 'mi',
+    'Marathi': 'mr', 'Mongolian': 'mn', 'Myanmar (Burmese)': 'my', 'Nepali': 'ne', 'Norwegian': 'no', 'Odia': 'or', 'Pashto': 'ps',
+    'Persian': 'fa', 'Polish': 'pl', 'Portuguese': 'pt', 'Punjabi': 'pa', 'Romanian': 'ro', 'Russian': 'ru', 'Samoan': 'sm',
+    'Scots Gaelic': 'gd', 'Serbian': 'sr', 'Sesotho': 'st', 'Shona': 'sn', 'Sindhi': 'sd', 'Sinhala': 'si', 'Slovak': 'sk',
+    'Slovenian': 'sl', 'Somali': 'so', 'Spanish': 'es', 'Sundanese': 'su', 'Swahili': 'sw', 'Swedish': 'sv', 'Tajik': 'tg', 'Tamil': 'ta',
+    'Telugu': 'te', 'Thai': 'th', 'Turkish': 'tr', 'Ukrainian': 'uk', 'Urdu': 'ur', 'Uyghur': 'ug', 'Uzbek': 'uz', 'Vietnamese': 'vi',
+    'Welsh': 'cy', 'Xhosa': 'xh', 'Yiddish': 'yi', 'Yoruba': 'yo', 'Zulu': 'zu'
+}
+
+def take_command():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        st.write("Listening...")
+        r.pause_threshold = 1
+        audio = r.listen(source)
+    try:
+        st.write("Recognizing...")
+        query = r.recognize_google(audio, language='en-in')
+        return query
+    except Exception as e:
+        st.write("Could not understand, please try again.")
+        return None
 
 def translate_text(text, target_lang):
     if isinstance(text, str):  # If input is a single string
@@ -82,7 +246,23 @@ def add_transparent_text(image, text, position, detected_lang, font_scale=0.8, t
 
     return overlay
 
+def translate_pdf(pdf_reader, target_language):
+    translator = Translator()
+    translated_pages = []
 
+    # Iterate over each page and translate the text
+    for page_num in range(len(pdf_reader.pages)):
+        page = pdf_reader.pages[page_num]
+        text = page.extract_text()
+
+        if text:
+            # Translate the text to the target language
+            translated = translator.translate(text, dest=target_language)
+            translated_pages.append(translated.text)
+        else:
+            translated_pages.append("No text found on this page.")
+
+    return translated_pages
 def perform_ocr_on_image(image_bytes, target_lang):
     # Convert bytes to image
     img = Image.open(io.BytesIO(image_bytes))
