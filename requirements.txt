@@ -7,5 +7,5 @@ gtts==2.3.2
 playsound==1.2.2
 pyaudio
 PyPDF2==3.0.1
-speechrecognition==3.9.0
+speechrecognition
 Pillow
