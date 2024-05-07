@@ -2,7 +2,6 @@ import cv2
 import easyocr
 import numpy as np
 import streamlit as st
-from audio_recorder_streamlit import audio_recorder
 from textblob import TextBlob
 from googletrans import Translator, LANGUAGES
 from gtts import gTTS
@@ -392,31 +391,30 @@ selected_language_audio = st.sidebar.selectbox("Choose target language for audio
 start_realtime_audio_button = st.sidebar.button("Start Listening", key="start_realtime_audio_button")
 
 # Initialize original_text variable
+original_text = ""
+
 if start_realtime_audio_button:
     st.write("Listening...")
 
-    # Record audio using audio_recorder_streamlit
-    audio_bytes = audio_recorder()
+    # Record audio
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        recognizer.adjust_for_ambient_noise(source)  # Adjust for noise
+        audio_data = recognizer.listen(source)
 
-    # Perform speech recognition if audio is captured
-    if audio_bytes:
-        st.audio(audio_bytes, format="audio/wav")  # Display captured audio (optional)
+    # Recognize speech
+    try:
+        original_text = recognizer.recognize_google(audio_data)
+        st.write(f"Original text: {original_text}")
+    except sr.UnknownValueError:
+        st.write("Could not understand the audio")
+    except sr.RequestError:
+        st.write("Could not request results; check your network connection")
 
-        # Perform speech recognition on captured audio
-        recognizer = sr.Recognizer()
-        with sr.AudioData(audio_bytes) as source:
-            try:
-                original_text = recognizer.recognize_google(source)
-                st.write(f"Original text: {original_text}")
-            except sr.UnknownValueError:
-                st.write("Could not understand the audio")
-            except sr.RequestError:
-                st.write("Could not request results; check your network connection")
-
-        # Translate text if original text is identified
-        if original_text:
-            translated_text = translate_text(original_text, selected_language_audio)
-            st.write(f"Translated text: {translated_text}")
+    # Translate text if original text is identified
+    if original_text:
+        translated_text = translate_text(original_text, selected_language_audio)
+        st.write(f"Translated text: {translated_text}")
 
 
 
